@@ -1,0 +1,3 @@
+# Prevent LFS pointer files from overwriting the downloaded binaries
+Build/deployment_1_1.wasm
+Build/deployment_1_1.data

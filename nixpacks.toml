@@ -1,11 +1,15 @@
 [phases.setup]
-nixPkgs = ["nodejs_18", "curl", "bash"]
+nixPkgs = ["nodejs_18", "curl"]
 
 [phases.install]
 cmds = [
-  "chmod +x download-lfs.sh",
+  "echo 'Downloading LFS files during build...'",
+  "curl -# -L -o Build/deployment_1_1.wasm https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm",
+  "curl -# -L -o Build/deployment_1_1.data https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data",
+  "ls -lh Build/deployment_1_1.wasm Build/deployment_1_1.data",
+  "head -c 4 Build/deployment_1_1.wasm | od -A x -t x1z -v",
   "npm ci --omit=dev"
 ]
 
 [start]
-cmd = "bash download-lfs.sh"
+cmd = "npm start"
