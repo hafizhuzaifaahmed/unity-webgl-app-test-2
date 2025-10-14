@@ -1,14 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_18", "git", "git-lfs"]
+nixPkgs = ["nodejs_18", "curl"]
 
 [phases.install]
 cmds = [
-  "git --version",
-  "git lfs version",
-  "git lfs install",
-  "git lfs fetch --all",
-  "git lfs checkout",
-  "ls -lh Build/deployment_1_1.wasm",
+  "curl -L -o Build/deployment_1_1.wasm https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm",
+  "curl -L -o Build/deployment_1_1.data https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data",
+  "ls -lh Build/deployment_1_1.wasm Build/deployment_1_1.data",
   "head -c 4 Build/deployment_1_1.wasm | od -A x -t x1z -v",
   "npm ci --omit=dev"
 ]
