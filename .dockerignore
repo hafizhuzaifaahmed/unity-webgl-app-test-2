@@ -1,0 +1,3 @@
+# Ignore LFS pointer files - we download the actual files during build
+Build/deployment_1_1.wasm
+Build/deployment_1_1.data
