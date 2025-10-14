@@ -1,16 +1,17 @@
 [phases.setup]
-nixPkgs = ["nodejs", "git-lfs", "bash"]
+nixPkgs = ["nodejs_18", "git", "git-lfs"]
 
 [phases.install]
 cmds = [
-  "git lfs install --skip-repo",
-  "git lfs pull",
-  "npm ci --omit=dev",
-  "bash check-lfs.sh"
+  "git --version",
+  "git lfs version",
+  "git lfs install",
+  "git lfs fetch --all",
+  "git lfs checkout",
+  "ls -lh Build/deployment_1_1.wasm",
+  "head -c 4 Build/deployment_1_1.wasm | od -A x -t x1z -v",
+  "npm ci --omit=dev"
 ]
 
 [start]
 cmd = "npm start"
-
-[variables]
-GIT_LFS_SKIP_SMUDGE = "0"
