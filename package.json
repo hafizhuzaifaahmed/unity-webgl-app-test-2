@@ -1,0 +1,13 @@
+{
+  "name": "unity-webgl-host",
+  "version": "1.0.0",
+  "description": "Unity WebGL Build hosted on Railway",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
