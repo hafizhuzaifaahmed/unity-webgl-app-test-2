@@ -3,3 +3,12 @@ builder = "NIXPACKS"
 
 [deploy]
 startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Railway resource optimization
+# Increase memory for better caching and faster file serving
+[[deploy.healthcheck]]
+path = "/"
+timeout = 300
+interval = 60

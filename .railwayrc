@@ -1,0 +1,13 @@
+# Railway Performance Optimization Configuration
+# This file helps optimize your Unity WebGL deployment
+
+# Environment variables for Node.js performance
+NODE_ENV=production
+NODE_OPTIONS=--max-old-space-size=4096
+
+# Enable HTTP keep-alive for faster subsequent requests
+HTTP_KEEP_ALIVE=true
+HTTP_KEEP_ALIVE_TIMEOUT=65000
+
+# Express.js optimizations
+EXPRESS_TRUST_PROXY=true

@@ -6,6 +6,15 @@
     <title>Unity WebGL Player | testing1</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    
+    <!-- Preload critical Unity WebGL files for faster loading -->
+    <link rel="preload" href="Build/deployment_1_1_loader.js" as="script">
+    <link rel="preload" href="Build/deployment_1_1_framework.js" as="script">
+    <link rel="preload" href="Build/deployment_1_1.wasm" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/deployment_1_1.data" as="fetch" crossorigin="anonymous">
+    
+    <!-- DNS prefetch for faster connections -->
+    <link rel="dns-prefetch" href="//media.githubusercontent.com">
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
