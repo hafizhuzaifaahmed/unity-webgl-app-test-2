@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_18", "unzip"]
+nixPkgs = ["nodejs_18", "curl"]
 
 [phases.install]
 cmds = [
