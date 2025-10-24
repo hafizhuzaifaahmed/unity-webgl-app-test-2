@@ -1,14 +1,10 @@
 [phases.setup]
-nixPkgs = ["nodejs_18", "curl"]
+nixPkgs = ["nodejs_18", "unzip"]
 
 [phases.install]
 cmds = [
-  "echo 'Downloading LFS files during build...'",
-  "curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -C - -# -L -o Build/deployment_1_1.wasm https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm || curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -# -L -o Build/deployment_1_1.wasm https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm",
-  "echo 'WASM download complete, starting data file...'",
-  "curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -C - -# -L -o Build/deployment_1_1.data https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data || curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -# -L -o Build/deployment_1_1.data https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data",
-  "ls -lh Build/deployment_1_1.wasm Build/deployment_1_1.data",
-  "head -c 4 Build/deployment_1_1.wasm | od -A x -t x1z -v",
+  "chmod +x setup-build.sh",
+  "./setup-build.sh",
   "npm ci --omit=dev"
 ]
 

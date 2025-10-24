@@ -23,34 +23,43 @@ app.use(compression({
   threshold: 1024 // Only compress files larger than 1KB
 }));
 
-// CRITICAL: Set correct MIME types and caching headers for Unity WebGL files
+// CRITICAL: Set correct MIME types and headers for Unity WebGL files
 app.use((req, res, next) => {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  
   if (req.url.endsWith('.wasm')) {
     res.setHeader('Content-Type', 'application/wasm');
-    // Aggressive caching for immutable build files
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    // No browser caching - serve fresh from server each time
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   } else if (req.url.endsWith('.data')) {
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
   } else if (req.url.endsWith('.framework.js') || req.url.endsWith('.loader.js')) {
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
   } else if (req.url.endsWith('.js')) {
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   } else if (req.url.endsWith('.html')) {
-    // Don't cache HTML to allow updates
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   }
   next();
 });
 
-// Serve static files from root directory with optimized settings
+// Serve static files from root directory - no browser caching
 app.use(express.static(__dirname, { 
-  maxAge: '1y',
-  immutable: true,
-  etag: true,
-  lastModified: true,
+  maxAge: 0,
+  etag: false,
+  lastModified: false,
   setHeaders: (res, filepath) => {
     // Additional headers for Unity WebGL files
     if (filepath.endsWith('.wasm')) {
