@@ -57,22 +57,40 @@ echo "⬇️  Downloading Unity build files (this happens ONCE)..."
 
 mkdir -p $BUILD_DIR
 
-# Download with retry logic
-echo "📥 Downloading WASM file..."
-curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -C - -# -L \
+# Download with retry logic and verbose output
+echo "📥 Downloading WASM file (50-80MB, may take 2-5 minutes)..."
+if ! curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -C - -# -L \
   -o "$BUILD_DIR/deployment_1_1.wasm" \
-  https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm \
-  || curl --retry 10 --retry-delay 3 --retry-all-errors -# -L \
-  -o "$BUILD_DIR/deployment_1_1.wasm" \
-  https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm
+  https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm; then
+  echo "⚠️  First attempt failed, trying without resume..."
+  curl --retry 10 --retry-delay 3 --retry-all-errors --connect-timeout 180 --max-time 1200 -# -L \
+    -o "$BUILD_DIR/deployment_1_1.wasm" \
+    https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm || {
+      echo "❌ WASM download failed after retries"
+      echo "File size: $(ls -lh $BUILD_DIR/deployment_1_1.wasm 2>/dev/null || echo 'not created')"
+      exit 1
+    }
+fi
 
-echo "📥 Downloading data file..."
-curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -C - -# -L \
+echo "✅ WASM downloaded successfully"
+ls -lh "$BUILD_DIR/deployment_1_1.wasm"
+
+echo "📥 Downloading data file (80-120MB, may take 3-7 minutes)..."
+if ! curl --retry 15 --retry-delay 5 --retry-all-errors --connect-timeout 180 --max-time 1200 -C - -# -L \
   -o "$BUILD_DIR/deployment_1_1.data" \
-  https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data \
-  || curl --retry 10 --retry-delay 3 --retry-all-errors -# -L \
-  -o "$BUILD_DIR/deployment_1_1.data" \
-  https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data
+  https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data; then
+  echo "⚠️  First attempt failed, trying without resume..."
+  curl --retry 10 --retry-delay 3 --retry-all-errors --connect-timeout 180 --max-time 1200 -# -L \
+    -o "$BUILD_DIR/deployment_1_1.data" \
+    https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data || {
+      echo "❌ Data file download failed after retries"
+      echo "File size: $(ls -lh $BUILD_DIR/deployment_1_1.data 2>/dev/null || echo 'not created')"
+      exit 1
+    }
+fi
+
+echo "✅ Data file downloaded successfully"
+ls -lh "$BUILD_DIR/deployment_1_1.data"
 
 # Verify download
 if verify_wasm "$BUILD_DIR/deployment_1_1.wasm" && [ -f "$BUILD_DIR/deployment_1_1.data" ]; then
