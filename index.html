@@ -76,6 +76,11 @@
         productName: "testing1",
         productVersion: "0.1",
         showBanner: unityShowBanner,
+        // Disable Unity's cache API to rely on HTTP caching instead
+        // This fixes the "Cache.put() encountered a network error" issue
+        cacheControl: function(url) {
+          return "must-revalidate";
+        }
       };
 
       // By default, Unity keeps WebGL canvas render target size matched with

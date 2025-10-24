@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["nodejs_18", "wget"]
+
+[phases.install]
+cmds = [
+  "echo 'Downloading LFS files with wget (better for large files)...'",
+  "wget --retry-connrefused --waitretry=5 --read-timeout=120 --timeout=600 --tries=10 --continue --progress=bar:force -O Build/deployment_1_1.wasm https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.wasm",
+  "wget --retry-connrefused --waitretry=5 --read-timeout=120 --timeout=600 --tries=10 --continue --progress=bar:force -O Build/deployment_1_1.data https://media.githubusercontent.com/media/hafizhuzaifaahmed/unity-webgl-app-test-2/main/Build/deployment_1_1.data",
+  "ls -lh Build/deployment_1_1.wasm Build/deployment_1_1.data",
+  "head -c 4 Build/deployment_1_1.wasm | od -A x -t x1z -v",
+  "npm ci --omit=dev"
+]
+
+[start]
+cmd = "npm start"
