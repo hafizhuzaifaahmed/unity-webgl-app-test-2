@@ -5,7 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server-cached.js",
+    "start:basic": "node server.js",
+    "start:cached": "node server-cached.js"
   },
   "dependencies": {
     "express": "^4.18.2",
