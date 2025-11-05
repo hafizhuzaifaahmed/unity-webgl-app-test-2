@@ -1,4 +1,2 @@
-# Prevent LFS pointer files from overwriting the downloaded binaries
-Build/deployment_1_1.wasm
-Build/deployment_1_1.data
-Build/
+# Allow Build files to be copied to Docker image
+# The setup-build.sh script will handle LFS detection and downloading if needed
