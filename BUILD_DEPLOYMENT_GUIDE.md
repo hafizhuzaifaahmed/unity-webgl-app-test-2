@@ -117,11 +117,13 @@ See `DEPLOYMENT_ALTERNATIVES.md` for detailed instructions.
 
 I've updated your project to:
 
-1. **nixpacks.toml**: Now runs `setup-build.sh` instead of downloading from GitHub
-2. **setup-build.sh**: Checks for build files in this order:
-   - Existing Build files in repo ✅
-   - build.zip in repo ✅
-   - Falls back to error (no downloads)
+1. **nixpacks.toml**: Now runs `setup-build.sh` during the install phase
+2. **setup-build.sh**: Intelligently handles build files in this order:
+   - ✅ Detects if Build files are Git LFS pointers
+   - ✅ Auto-downloads actual binaries from GitHub LFS if needed (172MB)
+   - ✅ Uses existing valid Build files from repo
+   - ✅ Falls back to Railway Volume at `/data/unity-build-cache`
+   - ❌ Fails with helpful message if none found
 
 3. **server.js**: Disabled browser caching
    - Files served fresh from server each time
@@ -156,11 +158,13 @@ git push
 
 ### Railway Build Process:
 ```
-1. Railway pulls your git repository
-2. Runs setup-build.sh
-3. Script checks for Build files or build.zip
-4. Extracts if needed
-5. Starts server with files ready
+1. Railway pulls your git repository (including LFS pointer files)
+2. Runs setup-build.sh during install phase
+3. Script detects if Build files are LFS pointers or invalid
+4. If LFS pointers: Downloads actual binaries from GitHub (172MB, ~30s)
+5. If valid files: Uses them directly
+6. If no files: Checks Railway Volume at /data/unity-build-cache
+7. Starts server with files ready
 ```
 
 ### User Loading Process:
@@ -178,8 +182,8 @@ git push
 
 | Method | Build Time | Load Time | Reliability |
 |--------|-----------|-----------|-------------|
-| **Download from GitHub LFS** | 5-10 min | 10-20s | ❌ Fails often |
-| **build.zip (current)** | 30s | 10-20s | ✅ Reliable |
+| **Git LFS (auto-download)** | 1-2 min | 10-20s | ✅ Reliable |
+| **Railway Volume** | 30s | 10-20s | ✅ Reliable |
 | **Direct commit** | 10s | 10-20s | ✅ Very reliable |
 | **Optimized Unity + direct** | 10s | 3-5s | ✅ Best |
 
