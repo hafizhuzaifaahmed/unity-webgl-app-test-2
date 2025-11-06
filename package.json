@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server-upload.js",
+    "start": "node server.js",
     "start:basic": "node server.js",
     "start:cached": "node server-cached.js",
     "start:upload": "node server-upload.js"
