@@ -11,9 +11,37 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// Configure multer for volume uploads
+// Configure volume and Build directory
 const VOLUME_DIR = "/data/unity-build-cache";
+const BUILD_DIR = path.join(__dirname, "Build");
 fs.mkdirSync(VOLUME_DIR, { recursive: true });
+fs.mkdirSync(BUILD_DIR, { recursive: true });
+
+// Copy Build files from volume at startup (runtime, when volume is available)
+function copyFilesFromVolume() {
+  try {
+    const files = fs.readdirSync(VOLUME_DIR);
+    if (files.length > 0) {
+      console.log(`📦 Copying ${files.length} files from volume to Build/...`);
+      files.forEach(file => {
+        const src = path.join(VOLUME_DIR, file);
+        const dest = path.join(BUILD_DIR, file);
+        fs.copyFileSync(src, dest);
+        const stats = fs.statSync(dest);
+        console.log(`  ✅ ${file} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
+      });
+      console.log(`✅ All files copied from volume`);
+    } else {
+      console.log(`⚠️  Volume is empty - upload files at /admin`);
+    }
+  } catch (error) {
+    console.log(`⚠️  Volume not accessible or empty: ${error.message}`);
+    console.log(`   Upload files at /admin to populate volume`);
+  }
+}
+
+// Copy files from volume on startup
+copyFilesFromVolume();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, VOLUME_DIR),

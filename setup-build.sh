@@ -69,9 +69,6 @@ if [ -d "$CACHE_DIR" ] && [ -f "$CACHE_DIR/deployment_1_1.wasm" ]; then
     exit 0
 fi
 
-echo "⚠️  Build files not found in repository or volume"
-echo "Option 1: Push Build files to git (tracked via Git LFS)"
-echo "Option 2: Upload to Railway volume:"
-echo "  - Run: railway run bash"
-echo "  - Then: mkdir -p /data/unity-build-cache && cp Build/* /data/unity-build-cache/"
-exit 1
+echo "⚠️  Build files not found - will copy from volume at runtime"
+echo "✅ Build phase complete"
+exit 0
