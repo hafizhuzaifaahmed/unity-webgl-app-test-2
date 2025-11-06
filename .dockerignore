@@ -1,2 +1,3 @@
-# Allow Build files to be copied to Docker image
-# The setup-build.sh script will handle LFS detection and downloading if needed
+# Exclude Build directory - setup-build.sh will copy from volume
+# This prevents LFS pointer files from overwriting actual binaries
+Build/
