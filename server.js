@@ -78,24 +78,31 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   
-  if (req.url.endsWith('.wasm')) {
+  // Handle Brotli pre-compressed files (.br extension)
+  if (req.url.endsWith('.wasm.br')) {
     res.setHeader('Content-Type', 'application/wasm');
-    // No browser caching - serve fresh from server each time
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    res.setHeader('Content-Encoding', 'br');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.url.endsWith('.data.br')) {
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Encoding', 'br');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.url.endsWith('.framework.js.br')) {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Content-Encoding', 'br');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.url.endsWith('.wasm')) {
+    res.setHeader('Content-Type', 'application/wasm');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (req.url.endsWith('.data')) {
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (req.url.endsWith('.framework.js') || req.url.endsWith('.loader.js')) {
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (req.url.endsWith('.js')) {
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (req.url.endsWith('.html')) {
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   }
