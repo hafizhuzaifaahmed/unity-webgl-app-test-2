@@ -2,146 +2,113 @@
 description: Deploy Unity WebGL build to Railway
 ---
 
-# Deploy to Railway - deployment_1.7
+# Deploy to Railway - Volume Upload Method
 
-This workflow guides you through deploying your Unity WebGL build (deployment_1.7) to Railway.
+This workflow uses Railway Volume to store build files, uploaded via the `/admin` panel.
 
 ## Prerequisites
 
-- Unity build files in `Build/` folder:
-  - `deployment_1.7.wasm.gz`
-  - `deployment_1.7.data.gz`
-  - `deployment_1.7.framework.js.gz`
-  - `deployment_1.7.loader.js`
-- `index.html` configured to load deployment_1.7 files
-- Railway account at https://railway.app
+- Unity build files ready (deployment_1.7.*)
+- Railway project: `crystalsytem-3dapp-test`
+- URL: https://crystalsytem-3dapp-test.up.railway.app
 
 ## Deployment Steps
 
-### 1. Verify Build Files
+### 1. Upload Build Files to Railway Volume
 
-First, check that all deployment_1.7 files are present:
+Go to your Railway admin panel:
 
-```powershell
-cd "d:\Crystal System\initial prototype\unity-webgl-app-fresh"
-ls Build\deployment_1.7.*
-```
+**URL**: https://crystalsytem-3dapp-test.up.railway.app/admin
 
-You should see 4 files listed.
+Upload these files:
+- `deployment_1.7.wasm.gz`
+- `deployment_1.7.data.gz`
+- `deployment_1.7.framework.js.gz`
+- `deployment_1.7.loader.js`
 
-### 2. Commit Build Files to Git
+The files will be stored in Railway Volume at `/data/unity-build-cache`
+
+### 2. Trigger Deployment via Git Push
+
+After uploading files, make any small change and push to GitHub to trigger Railway deployment:
 
 // turbo
 ```powershell
-git add Build/deployment_1.7.*
-git add index.html
-git add setup-build.sh
-git commit -m "Update to deployment_1.7 with gzip compression"
+# Make a small change (e.g., update a comment)
+git commit --allow-empty -m "Trigger Railway deployment with new build files"
 ```
-
-### 3. Push to GitHub
 
 // turbo
 ```powershell
 git push origin main
 ```
 
-### 4. Deploy on Railway
+### 3. Railway Auto-Detects New Build Files
 
-1. Go to https://railway.app and sign in
-2. Click **"New Project"**
-3. Select **"Deploy from GitHub repo"**
-4. Choose repository: `hafizhuzaifaahmed/unity-webgl-app-test-2`
-5. Railway will automatically:
-   - Detect `nixpacks.toml` configuration
-   - Run `setup-build.sh` during install phase
-   - Install npm dependencies
-   - Start server with `npm start`
+Railway will:
+1. Detect the git push
+2. Start a new deployment
+3. Run `setup-build.sh` which finds files in volume
+4. Copy files from volume to Build/ directory
+5. Start the server
+6. Serve the new build files
 
-### 5. Monitor Deployment
+### 4. Verify Deployment
 
-Watch the deployment logs for:
-- ✅ "Valid Build files found in repository"
-- ✅ "npm ci --omit=dev"
-- ✅ "Server running on port 3002"
+Visit your app:
+- **Main app**: https://crystalsytem-3dapp-test.up.railway.app
+- **Admin panel**: https://crystalsytem-3dapp-test.up.railway.app/admin
 
-Deployment typically takes 2-3 minutes.
+## How It Works
 
-### 6. Access Your App
-
-Once deployed, Railway provides a URL like:
-- `https://your-project-name.railway.app`
-
-Click the URL to test your Unity WebGL build.
-
-## Alternative: Deploy via Railway Volume
-
-If build files are too large for Git (>100MB), use Railway Volume instead:
-
-### 1. Deploy Server First
-
-```powershell
-# Remove Build files from git (keep setup script)
-git rm --cached Build/deployment_1.7.*
-git commit -m "Deploy server without build files"
-git push origin main
+```
+1. You upload files to /admin panel
+   ↓
+2. Files saved to Railway Volume (/data/unity-build-cache)
+   ↓
+3. You push to GitHub (triggers Railway deployment)
+   ↓
+4. setup-build.sh runs and copies files from volume
+   ↓
+5. Server starts and serves the new build files
 ```
 
-### 2. Add Railway Volume
+## File Requirements
 
-1. In Railway dashboard, go to your service
-2. Click **"Variables"** tab → **"Volumes"**
-3. Add volume:
-   - Name: `unity-build-cache`
-   - Mount path: `/data/unity-build-cache`
-4. Redeploy service
-
-### 3. Upload Files via Admin Panel
-
-1. Visit: `https://your-app.railway.app/admin`
-2. Upload each file:
-   - `deployment_1.7.wasm.gz`
-   - `deployment_1.7.data.gz`
-   - `deployment_1.7.framework.js.gz`
-   - `deployment_1.7.loader.js`
-3. Restart Railway service
+| File | Required | Description |
+|------|----------|-------------|
+| deployment_1.7.wasm.gz | ✅ Yes | WebAssembly binary (gzipped) |
+| deployment_1.7.data.gz | ✅ Yes | Game data (gzipped) |
+| deployment_1.7.framework.js.gz | ✅ Yes | Unity framework (gzipped) |
+| deployment_1.7.loader.js | ✅ Yes | Unity loader script |
 
 ## Troubleshooting
 
-### "Build files not found" Error
+### Files Not Loading
 
-**Solution**: Check that files are committed to Git:
-```powershell
-git ls-files Build/
-```
+**Check volume files**:
+1. Go to `/admin` panel
+2. Verify all 4 files are listed
+3. Check file sizes are correct
 
-### Railway Build Fails
+### Deployment Failed
 
-**Solution**: Check Railway logs for errors. Common issues:
-- Missing npm dependencies → Check `package.json`
-- setup-build.sh permission denied → Verify `chmod +x` in `nixpacks.toml`
+**Check Railway logs**:
+1. Go to Railway dashboard
+2. View deployment logs
+3. Look for "✅ Copying Build files from Railway Volume"
 
-### Unity App Loads Slowly
+### Need to Update Build
 
-**Solution**: Your deployment_1.7 files use gzip compression which is good. For even better performance:
-1. Enable Brotli compression (`.br` files) in Unity build settings
-2. Update server.js to serve `.br` files
-3. Reduces file size by additional 20-30%
+**Upload new files**:
+1. Go to `/admin` panel
+2. Upload new deployment_1.7 files (will overwrite)
+3. Push to GitHub to trigger deployment
 
-## File Size Reference
+## Advantages of Volume Method
 
-| File | Approximate Size |
-|------|------------------|
-| `deployment_1.7.wasm.gz` | ~12.7 MB |
-| `deployment_1.7.data.gz` | ~35 MB |
-| `deployment_1.7.framework.js.gz` | ~90 KB |
-| `deployment_1.7.loader.js` | ~26 KB |
-| **Total** | ~48 MB |
-
-## Next Steps
-
-After successful deployment:
-- Test the Unity app thoroughly
-- Check browser console for any errors
-- Monitor Railway service metrics
-- Consider setting up custom domain in Railway settings
+- ✅ No large files in Git repository
+- ✅ Fast git operations
+- ✅ Easy to update builds (just upload via /admin)
+- ✅ Files persist across deployments
+- ✅ No GitHub LFS needed
