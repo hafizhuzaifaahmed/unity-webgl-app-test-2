@@ -13,7 +13,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Build files (most stored in Railway volume)
-Build/*
-!Build/deployment_1.7.*
-build-temp.zip
+# Build files (stored in Railway volume via /admin upload)
+Build/
+*.zip
