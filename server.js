@@ -48,7 +48,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, file.originalname)
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 200 * 1024 * 1024 } // 200MB limit
 });
@@ -77,7 +77,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  
+
   // Handle Brotli pre-compressed files (.br extension)
   if (req.url.endsWith('.wasm.br')) {
     res.setHeader('Content-Type', 'application/wasm');
@@ -110,7 +110,7 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from root directory - no browser caching
-app.use(express.static(__dirname, { 
+app.use(express.static(__dirname, {
   maxAge: 0,
   etag: false,
   lastModified: false,
@@ -141,8 +141,8 @@ app.post('/admin/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ error: 'No file uploaded' });
   }
   console.log(`✅ Uploaded: ${req.file.originalname} (${(req.file.size / 1024 / 1024).toFixed(2)} MB)`);
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     filename: req.file.originalname,
     size: req.file.size
   });
@@ -166,6 +166,24 @@ app.get('/admin/files', (req, res) => {
   }
 });
 
+// Delete file from volume
+app.delete('/admin/files/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filepath = path.join(VOLUME_DIR, filename);
+
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    fs.unlinkSync(filepath);
+    console.log(`🗑️ Deleted: ${filename}`);
+    res.json({ success: true, message: `Deleted ${filename}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Upload interface
 app.get('/admin', (req, res) => {
   res.send(`
@@ -174,22 +192,35 @@ app.get('/admin', (req, res) => {
     <head>
       <title>Upload Build Files</title>
       <style>
-        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        body { font-family: Arial; max-width: 700px; margin: 50px auto; padding: 20px; }
         h1 { color: #333; }
         .upload-area { border: 2px dashed #ccc; padding: 30px; text-align: center; margin: 20px 0; }
         .file-list { margin-top: 30px; }
-        .file-item { padding: 10px; border-bottom: 1px solid #eee; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; margin-top: 10px; }
+        .file-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .file-info { flex: 1; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; margin-top: 10px; border-radius: 4px; }
         button:hover { background: #0056b3; }
+        .delete-btn { background: #dc3545; padding: 5px 15px; margin: 0; font-size: 14px; }
+        .delete-btn:hover { background: #c82333; }
         .progress { margin-top: 10px; color: #28a745; font-weight: bold; }
         .status { margin-top: 10px; padding: 10px; border-radius: 4px; }
         .success { background: #d4edda; color: #155724; }
         .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin: 10px 0; }
       </style>
     </head>
     <body>
       <h1>📤 Upload Unity Build Files</h1>
       <p>Upload files to Railway Volume at <code>/data/unity-build-cache</code></p>
+      
+      <div class="warning">
+        <strong>⚠️ Required Files for deployment_1.7:</strong><br>
+        • deployment_1.7.wasm.gz<br>
+        • deployment_1.7.data.gz<br>
+        • deployment_1.7.framework.js.gz<br>
+        • deployment_1.7.loader.js
+      </div>
+      
       <div class="upload-area">
         <input type="file" id="fileInput" multiple>
         <button onclick="uploadFiles()">Upload Files</button>
@@ -235,8 +266,30 @@ app.get('/admin', (req, res) => {
           }
           
           status.className = 'status success';
-          status.textContent = '✅ All files uploaded successfully!';
+          status.textContent = '✅ All files uploaded successfully! Push to GitHub to trigger deployment.';
           loadFiles();
+        }
+        
+        async function deleteFile(filename) {
+          if (!confirm(\`Are you sure you want to delete \${filename}?\`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(\`/admin/files/\${encodeURIComponent(filename)}\`, {
+              method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+              alert(\`✅ Deleted: \${filename}\`);
+              loadFiles();
+            } else {
+              alert(\`❌ Error: \${result.error}\`);
+            }
+          } catch (error) {
+            alert(\`❌ Delete failed: \${error.message}\`);
+          }
         }
         
         async function loadFiles() {
@@ -250,9 +303,15 @@ app.get('/admin', (req, res) => {
             fileList.innerHTML += '<p style="color: #666;">No files uploaded yet</p>';
           } else {
             data.files.forEach(file => {
+              const isOldFile = !file.filename.includes('deployment_1.7');
+              const highlight = isOldFile ? 'style="background: #fff3cd;"' : '';
               fileList.innerHTML += \`
-                <div class="file-item">
-                  <strong>\${file.filename}</strong> - \${file.sizeInMB} MB
+                <div class="file-item" \${highlight}>
+                  <div class="file-info">
+                    <strong>\${file.filename}</strong> - \${file.sizeInMB} MB
+                    \${isOldFile ? '<span style="color: #856404;"> (⚠️ Old file)</span>' : ''}
+                  </div>
+                  <button class="delete-btn" onclick="deleteFile('\${file.filename}')">🗑️ Delete</button>
                 </div>
               \`;
             });
