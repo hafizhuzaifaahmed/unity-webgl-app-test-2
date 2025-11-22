@@ -56,11 +56,13 @@ const upload = multer({
 // Parse JSON for upload endpoints
 app.use(express.json());
 
-// Enable gzip/brotli compression for all responses
-// This can reduce Unity WebGL file sizes by 60-80%
+// Enable gzip/brotli compression for responses that aren't already compressed
 app.use(compression({
   filter: (req, res) => {
-    // Compress all text-based files
+    // Don't compress files that are already pre-compressed (.gz, .br)
+    if (req.url.endsWith('.gz') || req.url.endsWith('.br')) {
+      return false;
+    }
     if (req.headers['x-no-compression']) {
       return false;
     }
@@ -78,8 +80,23 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
+  // Handle gzip pre-compressed files (.gz extension)
+  // CRITICAL: Must set Content-Encoding: gzip for browser to auto-decompress
+  if (req.url.endsWith('.wasm.gz')) {
+    res.setHeader('Content-Type', 'application/wasm');
+    res.setHeader('Content-Encoding', 'gzip');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.url.endsWith('.data.gz')) {
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Encoding', 'gzip');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.url.endsWith('.framework.js.gz')) {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Content-Encoding', 'gzip');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
   // Handle Brotli pre-compressed files (.br extension)
-  if (req.url.endsWith('.wasm.br')) {
+  else if (req.url.endsWith('.wasm.br')) {
     res.setHeader('Content-Type', 'application/wasm');
     res.setHeader('Content-Encoding', 'br');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -91,7 +108,9 @@ app.use((req, res, next) => {
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Content-Encoding', 'br');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-  } else if (req.url.endsWith('.wasm')) {
+  }
+  // Handle uncompressed files
+  else if (req.url.endsWith('.wasm')) {
     res.setHeader('Content-Type', 'application/wasm');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (req.url.endsWith('.data')) {
