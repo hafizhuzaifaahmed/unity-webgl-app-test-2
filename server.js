@@ -19,24 +19,56 @@ fs.mkdirSync(BUILD_DIR, { recursive: true });
 
 // Copy Build files from volume at startup (runtime, when volume is available)
 function copyFilesFromVolume() {
+  console.log(`\n🔍 Checking volume at: ${VOLUME_DIR}`);
+  console.log(`🔍 Build directory at: ${BUILD_DIR}`);
+
   try {
+    // Check if volume directory exists
+    if (!fs.existsSync(VOLUME_DIR)) {
+      console.log(`❌ Volume directory does not exist: ${VOLUME_DIR}`);
+      return;
+    }
+
     const files = fs.readdirSync(VOLUME_DIR);
+    console.log(`📁 Found ${files.length} files in volume`);
+
     if (files.length > 0) {
       console.log(`📦 Copying ${files.length} files from volume to Build/...`);
       files.forEach(file => {
         const src = path.join(VOLUME_DIR, file);
         const dest = path.join(BUILD_DIR, file);
+
+        // Copy file
         fs.copyFileSync(src, dest);
-        const stats = fs.statSync(dest);
-        console.log(`  ✅ ${file} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
+
+        // Verify copy
+        const srcStats = fs.statSync(src);
+        const destStats = fs.statSync(dest);
+
+        if (srcStats.size === destStats.size) {
+          console.log(`  ✅ ${file} (${(destStats.size / 1024 / 1024).toFixed(2)} MB) - copied successfully`);
+        } else {
+          console.log(`  ⚠️  ${file} - size mismatch! Source: ${srcStats.size}, Dest: ${destStats.size}`);
+        }
       });
-      console.log(`✅ All files copied from volume`);
+      console.log(`✅ All files copied from volume to Build/\n`);
+
+      // List final Build directory contents
+      const buildFiles = fs.readdirSync(BUILD_DIR);
+      console.log(`📂 Build directory now contains ${buildFiles.length} files:`);
+      buildFiles.forEach(file => {
+        const stats = fs.statSync(path.join(BUILD_DIR, file));
+        console.log(`   - ${file} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
+      });
+      console.log('');
     } else {
       console.log(`⚠️  Volume is empty - upload files at /admin`);
     }
   } catch (error) {
-    console.log(`⚠️  Volume not accessible or empty: ${error.message}`);
-    console.log(`   Upload files at /admin to populate volume`);
+    console.error(`❌ Error copying files from volume:`, error);
+    console.log(`   Volume path: ${VOLUME_DIR}`);
+    console.log(`   Build path: ${BUILD_DIR}`);
+    console.log(`   Upload files at /admin to populate volume\n`);
   }
 }
 
@@ -128,6 +160,53 @@ app.use((req, res, next) => {
   next();
 });
 
+// Custom handler for Build files with proper streaming
+app.get('/Build/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(BUILD_DIR, filename);
+
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    console.error(`❌ File not found: ${filename}`);
+    return res.status(404).send('File not found');
+  }
+
+  try {
+    const stat = fs.statSync(filePath);
+
+    // Set Content-Length for HTTP/2 compatibility
+    res.setHeader('Content-Length', stat.size);
+
+    // Already handled by middleware above, but ensure they're set
+    if (filename.endsWith('.wasm.gz')) {
+      res.setHeader('Content-Type', 'application/wasm');
+      res.setHeader('Content-Encoding', 'gzip');
+    } else if (filename.endsWith('.data.gz')) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Encoding', 'gzip');
+    } else if (filename.endsWith('.framework.js.gz')) {
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Content-Encoding', 'gzip');
+    } else if (filename.endsWith('.loader.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+
+    // Stream the file instead of loading into memory
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', (error) => {
+      console.error(`❌ Stream error for ${filename}:`, error);
+      if (!res.headersSent) {
+        res.status(500).send('Error streaming file');
+      }
+    });
+
+    stream.pipe(res);
+  } catch (error) {
+    console.error(`❌ Error serving ${filename}:`, error);
+    res.status(500).send('Error reading file');
+  }
+});
+
 // Serve static files from root directory - no browser caching
 app.use(express.static(__dirname, {
   maxAge: 0,
@@ -143,9 +222,6 @@ app.use(express.static(__dirname, {
     }
   }
 }));
-
-// Explicitly serve Build folder
-app.use('/Build', express.static(path.join(__dirname, 'Build')));
 
 // Explicitly serve TemplateData folder
 app.use('/TemplateData', express.static(path.join(__dirname, 'TemplateData')));
@@ -233,11 +309,11 @@ app.get('/admin', (req, res) => {
       <p>Upload files to Railway Volume at <code>/data/unity-build-cache</code></p>
       
       <div class="warning">
-        <strong>⚠️ Required Files for deployment_1.7:</strong><br>
-        • deployment_1.7.wasm.gz<br>
-        • deployment_1.7.data.gz<br>
-        • deployment_1.7.framework.js.gz<br>
-        • deployment_1.7.loader.js
+        <strong>⚠️ Required Files for deployment_2.1:</strong><br>
+        • deployment_2.1.wasm.gz<br>
+        • deployment_2.1.data.gz<br>
+        • deployment_2.1.framework.js.gz<br>
+        • deployment_2.1.loader.js
       </div>
       
       <div class="upload-area">
@@ -322,7 +398,7 @@ app.get('/admin', (req, res) => {
             fileList.innerHTML += '<p style="color: #666;">No files uploaded yet</p>';
           } else {
             data.files.forEach(file => {
-              const isOldFile = !file.filename.includes('deployment_1.7');
+              const isOldFile = !file.filename.includes('deployment_2.1');
               const highlight = isOldFile ? 'style="background: #fff3cd;"' : '';
               fileList.innerHTML += \`
                 <div class="file-item" \${highlight}>
